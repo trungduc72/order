@@ -146,8 +146,8 @@
                 </div>
             </div>
 
-            <div class="mb-3 lineTable" id="inputFields"></div>
-            <button id="rowAdder" class="btn btn-success">Add</button>
+            <div class="lineTable" id="inputFields"></div>
+            <button id="rowAdder" class="btn btn-success mb-3">Add</button>
         </div>
 
         <div class="step">
@@ -311,10 +311,13 @@
                 </div>
             </div>`;
 
-            $('#inputFields').append(newRowAdd);
-
             const selects = document.querySelectorAll('.dish');
-            const lastSelect = selects[selects.length - 1];
+            if (selects.length < arrDishes.length){
+                $('#inputFields').append(newRowAdd);
+            }
+
+            const selectsLast = document.querySelectorAll('.dish');
+            const lastSelect = selectsLast[selectsLast.length - 1];
             lastSelect.innerHTML = ''
             arrDishes.forEach(element => {
 
@@ -330,19 +333,18 @@
             $(this).parents("#row").remove();
         })
 
+        var selectedValue = [];
         function handleSelectChange(selected) {
-            const selectedValue = selected.value;
+            selectedValue.push(selected.value);
             
             console.log(selectedValue);
             document.querySelectorAll('select').forEach(select => {
-                // Nếu không phải là select được chọn
                 if (select !== selected) {
-                    // Loại bỏ option đã được chọn từ select khác
                     select.querySelectorAll('option').forEach(option => {
-                        if (option.value === selectedValue) {
-                            option.disabled = true; // Tạm vô hiệu hóa option
+                        if (selectedValue.includes(option.value)) {
+                            option.disabled = true; 
                         } else {
-                            option.disabled = false; // Bật lại option không được chọn
+                            option.disabled = false;
                         }
                     });
                 }
