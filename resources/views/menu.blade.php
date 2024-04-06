@@ -100,8 +100,7 @@
                 <div class="mb-3">
                     <label class="mb-3" class="form-label">Please select a meal</label>
                     <select id="meal" name="meal" class="form-select" aria-label="Default select example">
-                        <option selected>Select a meal</option>
-                        <option value="breakfast">Breakfast</option>
+                        <option value="breakfast" selected>Breakfast</option>
                         <option value="lunch">Lunch</option>
                         <option value="dinner">Dinner</option>
                     </select>
@@ -120,8 +119,7 @@
                 <div class="mb-3">
                     <label class="mb-3" class="form-label">Please select a restaurant</label>
                     <select id="restaurant" name="restaurant" class="form-select" aria-label="Default select example">
-                        <option selected>Select a restaurant</option>
-                        <option value="mcdonalds">Mc Donalds</option>
+                        <option value="mcdonalds" selected>Mc Donalds</option>
                         <option value="tacobell">Taco Bell</option>
                         <option value="bbqhut">BBQ Hut</option>
                         <option value="vegedeli">Vege Deli</option>
@@ -135,10 +133,10 @@
 
         <div class="step">
             <p class="text-center mb-4">Step 3</p>
-            <div class="mb-3 d-flex lineDish" style="gap: 10px;">
+            <div class="mb-3 d-flex lineTable" style="gap: 10px;">
                 <div class="mb-3 col-6">
                     <label class="mb-3" class="form-label">Please select a dish</label>
-                    <select id="dish" name="dish" class="form-select dish" aria-label="Default select example">
+                    <select id="dish" name="dish" class="form-select dish" onchange="handleSelectChange(this)" aria-label="Default select example">
                         <option>Select a Dish</option>
                     </select>
                 </div>
@@ -148,7 +146,7 @@
                 </div>
             </div>
 
-            <div class="mb-3 lineDish" id="inputFields"></div>
+            <div class="mb-3 lineTable" id="inputFields"></div>
             <button id="rowAdder" class="btn btn-success">Add</button>
         </div>
 
@@ -182,9 +180,7 @@
                 <div class="mb-3 col-6">
                     <label class="mb-3" class="form-label">Dishes</label>
                 </div>
-                <div class="mb-3 col-6 d-flex">
-                    <label id="rDish" class="mb-3" class="form-label"></label>-
-                    <label id="rNumberServings" class="mb-3" class="form-label"></label>
+                <div class="mb-3 col-6" id="listDishes">
                 </div>
             </div>
         </div>
@@ -199,6 +195,7 @@
     <script>
         //xử lí show tab
         let currentTab = 0;
+        let arrDishes = [];
         showTab(currentTab);
 
         function showTab(n) {
@@ -263,27 +260,26 @@
         //xử lí chọn món
         var selectMeal = document.getElementById('meal');
         var selectRestaurant = document.getElementById('restaurant');
-        selectRestaurant.addEventListener('change', function() {
+
+        function handle() {
             var arr = [];
             arr.push(selectMeal.value);
             arr.push(selectRestaurant.value);
-            console.log('Selected value:', arr);
-
+            
             axios.post('/menu', {
                     data: arr
                 })
                 .then(function(response) {
-                    // console.log(response.data.dishes);
-
-                    var arrDishes = response.data.dishes
+                    arrDishes = response.data.dishes
                     var selects = document.querySelectorAll("select.dish");
                     selects.forEach(function(select) {
+                        select.innerHTML = ''
                         arrDishes.forEach(element => {
-    
+
                             var option = document.createElement("option");
                             option.text = element.name;
-                            option.value = element.name;    
-    
+                            option.value = element.name;
+
                             select.appendChild(option);
                         });
                     });
@@ -292,13 +288,16 @@
                     console.log(error);
                 });
 
-        });
+        };
+
+        selectMeal.addEventListener('change', handle);
+        selectRestaurant.addEventListener('change', handle);
 
         $("#rowAdder").click(function() {
             newRowAdd =
                 `<div id="row" class="mb-3 d-flex" style="gap: 10px;">
                 <div class="mb-3 col-6">
-                    <select id="dish" name="dish" class="form-select dish" aria-label="Default select example">
+                    <select id="dish" name="dish" class="form-select dish" onchange="handleSelectChange(this)" aria-label="Default select example">
                         <option>Select a Dish</option>
                     </select>
                 </div>
@@ -313,20 +312,53 @@
             </div>`;
 
             $('#inputFields').append(newRowAdd);
+
+            const selects = document.querySelectorAll('.dish');
+            const lastSelect = selects[selects.length - 1];
+            lastSelect.innerHTML = ''
+            arrDishes.forEach(element => {
+
+                var option = document.createElement("option");
+                option.text = element.name;
+                option.value = element.name;
+
+                lastSelect.appendChild(option);
+            });
         });
 
         $("body").on("click", "#DeleteRow", function() {
             $(this).parents("#row").remove();
         })
 
+        function handleSelectChange(selected) {
+            const selectedValue = selected.value;
+            
+            console.log(selectedValue);
+            document.querySelectorAll('select').forEach(select => {
+                // Nếu không phải là select được chọn
+                if (select !== selected) {
+                    // Loại bỏ option đã được chọn từ select khác
+                    select.querySelectorAll('option').forEach(option => {
+                        if (option.value === selectedValue) {
+                            option.disabled = true; // Tạm vô hiệu hóa option
+                        } else {
+                            option.disabled = false; // Bật lại option không được chọn
+                        }
+                    });
+                }
+            });
+        }
+
         //xử lí hiển thị
         var submit = document.getElementById("nextBtn")
         submit.addEventListener('click', function() {
+            handle()
             document.getElementById('rMeal').innerHTML = document.getElementById('meal').value
             document.getElementById('rNumberPeople').innerHTML = document.getElementById('numberPeople').value
             document.getElementById('rRestaurant').innerHTML = document.getElementById('restaurant').value
 
             var divs = document.querySelectorAll('.lineTable');
+
             divs.forEach(function(div) {
                 var select = div.querySelector('select');
                 var input = div.querySelector('input');
@@ -335,16 +367,16 @@
                 var selectValue = select ? select.value : null;
                 var inputValue = input ? input.value : null;
 
-                // Đưa giá trị vào mảng values
-                if (selectValue !== null) {
-                    values.push(selectValue);
-                }
-                if (inputValue !== null) {
-                    values.push(inputValue);
+                if (inputValue != null && selectValue != null && inputValue != '' && selectValue != '') {
+                    var newlist = `<div class="mb-3 d-flex">
+                        <label id="rDish" class="mb-3" class="form-label">` + selectValue + `</label>-
+                        <label id="rNumberServings" class="mb-3" class="form-label">` + inputValue + `</label>
+                        </div>`
+
+                    $('#listDishes').append(newlist);
                 }
             });
-            document.getElementById('rDish').innerHTML = document.getElementById('dish').value
-            document.getElementById('rNumberServings').innerHTML = document.getElementById('numberServings').value
+
         });
     </script>
 
